@@ -461,6 +461,40 @@ a {
     pointer-events: none;
 }
 
+.camera-frame.is-analyzing {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 0 28px rgba(255, 74, 74, 0.12);
+}
+
+.camera-frame.is-analyzing video {
+    filter: saturate(1.08) contrast(1.04) brightness(1.03);
+}
+
+.camera-frame.is-analyzing .camera-overlay::before,
+.camera-frame.is-analyzing .camera-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.camera-frame.is-analyzing .camera-overlay::before {
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    top: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+    box-shadow: 0 0 16px rgba(255, 255, 255, 0.55);
+    animation: scan-sweep 1.2s linear infinite;
+}
+
+.camera-frame.is-analyzing .camera-overlay::after {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 18%, rgba(255, 255, 255, 0.03) 50%, transparent 82%),
+        radial-gradient(circle at center, rgba(255, 255, 255, 0.08), transparent 35%);
+    opacity: 0.75;
+    animation: scan-flicker 1.6s ease-in-out infinite;
+}
+
 .scan-actions {
     display: flex;
     gap: 0.65rem;
@@ -477,6 +511,24 @@ a {
 .scan-status {
     font-size: 0.5rem;
     line-height: 1.7;
+}
+
+.scan-status.is-analyzing {
+    position: relative;
+    overflow: hidden;
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 0 18px rgba(255, 255, 255, 0.03);
+}
+
+.scan-status.is-analyzing::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -35%;
+    width: 35%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+    animation: scan-status-sweep 1.05s linear infinite;
 }
 
 .scan-result strong {
@@ -518,6 +570,33 @@ a {
 
 .is-hidden {
     display: none !important;
+}
+
+@keyframes scan-sweep {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(520px);
+    }
+}
+
+@keyframes scan-flicker {
+    0%, 100% {
+        opacity: 0.55;
+    }
+    50% {
+        opacity: 0.9;
+    }
+}
+
+@keyframes scan-status-sweep {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(380%);
+    }
 }
 
 .region-count {

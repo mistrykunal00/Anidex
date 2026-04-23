@@ -633,6 +633,8 @@ async function captureAndRecognize() {
     const canvas = document.getElementById("capture-canvas");
     const status = document.getElementById("scan-status");
     const result = document.getElementById("scan-result");
+    const stage = document.querySelector(".scan-stage");
+    const frame = document.querySelector(".camera-frame");
 
     if (!video || !canvas || !status) {
         return;
@@ -643,6 +645,18 @@ async function captureAndRecognize() {
         return;
     }
 
+    const setAnalyzingState = (enabled) => {
+        if (stage) {
+            stage.classList.toggle("is-analyzing", enabled);
+        }
+        if (frame) {
+            frame.classList.toggle("is-analyzing", enabled);
+        }
+        if (status) {
+            status.classList.toggle("is-analyzing", enabled);
+        }
+    };
+
     const width = video.videoWidth || 1280;
     const height = video.videoHeight || 720;
     canvas.width = width;
@@ -650,6 +664,7 @@ async function captureAndRecognize() {
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, width, height);
 
+    setAnalyzingState(true);
     status.textContent = "Analyzing image...";
 
     let data = null;
@@ -692,23 +707,27 @@ async function captureAndRecognize() {
         };
     }
 
-    status.textContent = "Scan complete.";
-    if (result) {
-        result.classList.remove("is-hidden");
-        const detectedName = document.getElementById("detected-name");
-        const detectedNote = document.getElementById("detected-note");
-        const detectedAlt = document.getElementById("detected-alt");
-        if (detectedName) {
-            detectedName.textContent = `Detected: ${data.detected}`;
+    try {
+        status.textContent = "Scan complete.";
+        if (result) {
+            result.classList.remove("is-hidden");
+            const detectedName = document.getElementById("detected-name");
+            const detectedNote = document.getElementById("detected-note");
+            const detectedAlt = document.getElementById("detected-alt");
+            if (detectedName) {
+                detectedName.textContent = `Detected: ${data.detected}`;
+            }
+            if (detectedNote) {
+                detectedNote.textContent = data.note || "";
+            }
+            if (detectedAlt) {
+                detectedAlt.textContent = (data.alternatives || [])
+                    .map((item) => `${item.name} ${Math.round((item.confidence || 0) * 100)}%`)
+                    .join(" | ");
+            }
         }
-        if (detectedNote) {
-            detectedNote.textContent = data.note || "";
-        }
-        if (detectedAlt) {
-            detectedAlt.textContent = (data.alternatives || [])
-                .map((item) => `${item.name} ${Math.round((item.confidence || 0) * 100)}%`)
-                .join(" | ");
-        }
+    } finally {
+        setAnalyzingState(false);
     }
 
     renderSuggestionPanel(getSuggestedMatch(data.detected));
