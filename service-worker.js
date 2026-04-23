@@ -1,4 +1,4 @@
-const CACHE_NAME = "anidex-static-v4";
+const CACHE_NAME = "anidex-static-v5";
 const CORE_ASSETS = [
     "/",
     "/index.html",

@@ -51,6 +51,7 @@ const state = {
     currentEntry: null,
     currentCameraStream: null,
     recognizerPromise: null,
+    recognizerError: null,
 };
 
 function loadJson(key, fallback) {
@@ -546,6 +547,7 @@ async function loadBrowserRecognizer() {
     try {
         await ensureTensorflowRecognizer();
     } catch (_error) {
+        state.recognizerError = _error && _error.message ? _error.message : String(_error || "Model bootstrap failed.");
         return null;
     }
 
@@ -553,9 +555,11 @@ async function loadBrowserRecognizer() {
         if (!state.recognizerPromise) {
             state.recognizerPromise = window.cocoSsd
                 .load({
-                    modelUrl: "/static/vendor/coco-ssd/model.json",
+                    base: "lite_mobilenet_v2",
+                    modelUrl: new URL("/static/vendor/coco-ssd/model.json", window.location.href).toString(),
                 })
                 .catch((error) => {
+                    state.recognizerError = error && error.message ? error.message : String(error || "Model load failed.");
                     state.recognizerPromise = null;
                     throw error;
                 });
@@ -652,6 +656,7 @@ async function captureAndRecognize() {
     try {
         const model = await loadBrowserRecognizer();
         if (model) {
+            state.recognizerError = null;
             const predictions = await model.detect(canvas);
             const chosen = pickBrowserLabel(predictions);
             if (chosen) {
@@ -681,7 +686,9 @@ async function captureAndRecognize() {
                 { name: "Cat", confidence: 0.11 },
                 { name: "Crow", confidence: 0.09 },
             ],
-            note: "Recognition model could not load in this browser. The camera still works, but install a normal browser tab for best results.",
+            note: state.recognizerError
+                ? `Recognition model error: ${state.recognizerError}`
+                : "Recognition model could not load in this browser. The camera still works, but install a normal browser tab for best results.",
         };
     }
 
