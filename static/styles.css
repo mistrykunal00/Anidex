@@ -455,6 +455,7 @@ a {
     height: 100%;
     object-fit: cover;
     display: block;
+    filter: saturate(1.15) contrast(1.05) brightness(0.95) hue-rotate(175deg) saturate(1.25);
 }
 
 .camera-overlay {
@@ -472,7 +473,7 @@ a {
 }
 
 .camera-frame.is-analyzing video {
-    filter: saturate(1.08) contrast(1.04) brightness(1.03);
+    filter: saturate(1.22) contrast(1.08) brightness(1.0) hue-rotate(180deg) saturate(1.35);
 }
 
 .camera-frame.is-analyzing .camera-overlay::before,
