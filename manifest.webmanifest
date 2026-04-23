@@ -1,0 +1,16 @@
+{
+  "name": "Anídex",
+  "short_name": "Anídex",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#111214",
+  "theme_color": "#b71b33",
+  "icons": [
+    {
+      "src": "/static/anidex-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

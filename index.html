@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anídex</title>
+    <meta name="theme-color" content="#111214">
+    <meta name="apple-mobile-web-app-title" content="Anídex">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="page-shell">
+        <section class="dex-shell" id="top">
+            <header class="dex-top">
+                <div class="device-lights" aria-hidden="true">
+                    <span class="light orb-blue"></span>
+                    <span class="light orb-red"></span>
+                    <span class="light orb-yellow"></span>
+                    <span class="light orb-green"></span>
+                </div>
+                <div class="header-meta">
+                    <span class="device-date" id="device-date"></span>
+                    <div class="speaker-lines" aria-hidden="true">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </header>
+
+            <section class="hero screen-panel">
+                <div class="screen-header">
+                    <p class="eyebrow">Field Device v0.2</p>
+                    <span class="screen-dot"></span>
+                </div>
+                <div class="hero-copy">
+                    <h1>Anídex</h1>
+                    <p class="hero-text">
+                        Start with everyday animals around you, then work your way toward wild and dangerous ones.
+                    </p>
+                </div>
+                <div class="hero-panel">
+                    <div class="stat-card">
+                        <span class="stat-label">Seen</span>
+                        <strong id="progress-count">0/0</strong>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Region</span>
+                        <strong>1</strong>
+                    </div>
+                </div>
+            </section>
+
+            <nav class="dex-nav" aria-label="Primary">
+                <a class="dex-tab is-active" href="#top">Dex</a>
+                <a class="dex-tab" href="#region-1">Region 1</a>
+                <a class="dex-tab" href="#profile-section">Profile</a>
+            </nav>
+
+            <section class="camera-dock" id="scan-section">
+                <button class="camera-launch" id="home-camera-open" type="button">
+                    <span class="camera-lens" aria-hidden="true"></span>
+                    <span class="camera-copy">
+                        <span class="camera-label">Camera</span>
+                        <span class="camera-hint">Open live scan</span>
+                    </span>
+                    <span class="camera-chev" aria-hidden="true">›</span>
+                </button>
+            </section>
+
+            <section class="toolbar control-panel">
+                <input id="search-input" class="search-input" type="search" placeholder="Search animals, habitats...">
+                <button id="clear-progress" class="ghost-button" type="button">Reset progress</button>
+            </section>
+
+            <section class="region-section" id="region-1">
+                <div class="region-header">
+                    <div>
+                        <p class="eyebrow">Region 1</p>
+                        <h2>Dex</h2>
+                        <p class="region-subtitle">Simple starter dex for everyday sightings</p>
+                    </div>
+                    <div class="region-count" id="animal-count">0 entries</div>
+                </div>
+
+                <section class="grid" id="animal-grid"></section>
+            </section>
+
+            <section class="region-section" id="profile-section">
+                <div class="region-header">
+                    <div>
+                        <p class="eyebrow">Profile</p>
+                        <h2>Trainer</h2>
+                        <p class="region-subtitle">Keep your discoveries and account info in one place.</p>
+                    </div>
+                </div>
+                <div id="profile-body"></div>
+            </section>
+        </section>
+    </div>
+
+    <section class="camera-modal is-hidden" id="home-camera-modal" aria-hidden="true">
+        <div class="camera-modal-backdrop" id="home-camera-close"></div>
+        <div class="camera-modal-shell" role="dialog" aria-modal="true" aria-labelledby="home-camera-title">
+            <div class="camera-modal-header">
+                <div>
+                    <p class="eyebrow" id="home-camera-title">Live Camera</p>
+                    <p class="region-subtitle">Use this to scan animals without leaving the home screen.</p>
+                </div>
+                <button class="camera-modal-close" id="home-camera-x" type="button">Close</button>
+            </div>
+
+            <section class="scan-stage control-panel">
+                <div class="camera-frame">
+                    <video id="camera-preview" autoplay playsinline muted></video>
+                    <div class="camera-overlay" aria-hidden="true"></div>
+                </div>
+                <canvas id="capture-canvas" class="is-hidden"></canvas>
+                <div class="scan-actions">
+                    <button id="start-camera" class="primary-button" type="button">Start Camera</button>
+                    <button id="capture-photo" class="ghost-button" type="button">Capture</button>
+                </div>
+                <div class="scan-actions">
+                    <button id="upload-scan" class="primary-button wide-button" type="button">Recognize Animal</button>
+                </div>
+                <div id="scan-status" class="scan-status">Camera is off.</div>
+                <div id="scan-result" class="scan-result is-hidden">
+                    <strong id="detected-name"></strong>
+                    <p id="detected-note"></p>
+                    <div id="detected-alt" class="detected-alt"></div>
+                </div>
+                <div id="confirm-panel" class="confirm-panel is-hidden">
+                    <div class="confirm-label">Closest Dex match</div>
+                    <strong id="confirm-name"></strong>
+                    <p id="confirm-desc"></p>
+                    <div class="confirm-actions">
+                        <button id="confirm-found" class="primary-button" type="button">Confirm Found</button>
+                        <button id="open-entry" class="ghost-button" type="button">View Entry</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </section>
+
+    <section class="camera-modal is-hidden" id="entry-modal" aria-hidden="true">
+        <div class="camera-modal-backdrop" id="entry-modal-close"></div>
+        <div class="camera-modal-shell" role="dialog" aria-modal="true" aria-labelledby="entry-modal-title">
+            <div class="camera-modal-header">
+                <div>
+                    <p class="eyebrow" id="entry-modal-title">Animal Entry</p>
+                    <p class="region-subtitle">Field guide details for this animal.</p>
+                </div>
+                <button class="camera-modal-close" id="entry-modal-x" type="button">Close</button>
+            </div>
+
+            <article class="entry-card entry-modal-card">
+                <div class="entry-screen">
+                    <div class="entry-screen-top">
+                        <span class="entry-id">ENTRY</span>
+                        <span class="screen-dot"></span>
+                    </div>
+                    <div class="entry-header">
+                        <span class="entry-emoji" id="entry-modal-emoji"></span>
+                        <div>
+                            <p class="eyebrow">Animal Entry</p>
+                            <h1 id="entry-modal-name"></h1>
+                            <p class="scientific-name" id="entry-modal-scientific"></p>
+                        </div>
+                    </div>
+                    <p class="entry-description" id="entry-modal-description"></p>
+                    <div class="fact-callout">
+                        <span>Did you know?</span>
+                        <p id="entry-modal-fact"></p>
+                    </div>
+                    <div class="detail-chips">
+                        <span class="rarity-chip" id="entry-modal-rarity"></span>
+                        <span class="detail-region" id="entry-modal-region"></span>
+                    </div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-box">
+                        <span>Habitat</span>
+                        <strong id="entry-modal-habitat"></strong>
+                    </div>
+                    <div class="info-box">
+                        <span>Diet</span>
+                        <strong id="entry-modal-diet"></strong>
+                    </div>
+                    <div class="info-box">
+                        <span>Status</span>
+                        <strong id="entry-modal-status"></strong>
+                    </div>
+                    <div class="info-box">
+                        <span>Category</span>
+                        <strong id="entry-modal-category"></strong>
+                    </div>
+                </div>
+
+                <button class="primary-button wide-button discover-button" type="button" id="entry-modal-discover">
+                    Mark as Discovered
+                </button>
+            </article>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/vendor/tf.min.js"></script>
+    <script src="/static/vendor/coco-ssd.min.js"></script>
+    <script src="/static/animals.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>

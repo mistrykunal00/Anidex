@@ -1,6 +1,6 @@
 services:
   - type: web
     name: anidex
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    runtime: static
+    staticPublishPath: .
+    buildCommand: echo "Static site ready"

@@ -1,73 +1,41 @@
-# Anidex Day 1
+# Anídex
 
-A lightweight Flask prototype for an animal discovery app inspired by a Pokédex.
+A static, mobile-first animal dex inspired by the feeling of a Pokedex.
 
-## Features
+## What it does
 
-- Responsive animal card grid
-- Animal detail pages
-- Login, signup, and profile pages
-- Local progress tracking for guests
-- Database-backed progress for signed-in users
-- Search by name, habitat, category, or region
-- Live camera scan flow
+- Shows a region 1 dex with 80 simple animal entries
+- Lets users search, open entries, and mark discoveries
+- Includes a live camera scan flow in the browser
+- Stores progress and demo accounts in `localStorage`
+- Works as an installable PWA
 
 ## Run locally
 
-```bash
-pip install -r requirements.txt
-python app.py
-```
-
-Then open `http://127.0.0.1:5000`.
-
-## Run on phone with camera
-
-If you want the simplest no-warning path for mobile camera access, install Cloudflare Tunnel on Windows:
+Use any static server from the project root:
 
 ```powershell
-winget install --id Cloudflare.cloudflared
+py -m http.server 8000
 ```
 
-Then run:
+Then open:
 
-```powershell
-.\run_tunnel.bat
+```text
+http://127.0.0.1:8000
 ```
 
-That starts the local Flask server and prints a trusted `https://*.trycloudflare.com` URL. Open that URL on your phone and the camera button should work without the local `Not secure` warning.
+For camera testing on a real phone, use an HTTPS deployment or a secure tunnel.
 
-If you only want the local network version, use:
+## Deploy
 
-```powershell
-.\run_http.bat
-```
+Best simple options:
 
-If you want the self-signed HTTPS version instead, use:
+- [Render Static Site](https://render.com/docs/static-sites)
+- [Netlify](https://docs.netlify.com/site-deploys/create-deploys/)
 
-```powershell
-.\run_https.bat
-```
+If you deploy on Render, the included `render.yaml` already points to the static build.
 
-## Public deploy
+## Notes
 
-Best public setup:
-
-- Host the Flask app on [Render](https://render.com/docs/deploy-flask)
-- Store users and progress in [Supabase Postgres](https://supabase.com/docs/guides/database)
-
-Render deploy settings:
-
-- Build command: `pip install -r requirements.txt`
-- Start command: `gunicorn app:app --bind 0.0.0.0:$PORT`
-
-Environment variables to set on Render:
-
-- `DATABASE_URL` = your Supabase Postgres connection string
-- `ANIDEX_SECRET_KEY` = a long random secret
-
-Notes:
-
-- Render web services must bind to `0.0.0.0` and use the `PORT` value provided by Render.
-- The deployed site will be served over HTTPS, so friends should not see the browser `Not secure` warning.
-- Local SQLite still works when `DATABASE_URL` is not set, which is useful for development.
+- The app uses Bootstrap and a custom pixel font for the look.
+- Login and progress are local-demo mode for now. We can wire Supabase auth later if you want shared accounts.
