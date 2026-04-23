@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="dex-shell" id="top">
+    <header class="dex-top">
+        <div class="device-lights" aria-hidden="true">
+            <span class="light orb-blue"></span>
+            <span class="light orb-red"></span>
+            <span class="light orb-yellow"></span>
+            <span class="light orb-green"></span>
+        </div>
+        <div class="header-meta">
+            <span class="device-date">{{ today_label }}</span>
+            <div class="speaker-lines" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero screen-panel">
+        <div class="screen-header">
+            <p class="eyebrow">Field Device v0.2</p>
+            <span class="screen-dot"></span>
+        </div>
+        <div class="hero-copy">
+            <h1>Anidex</h1>
+            <p class="hero-text">
+                Start with everyday animals around you, then work your way toward wild and dangerous ones.
+            </p>
+        </div>
+        <div class="hero-panel">
+            <div class="stat-card">
+                <span class="stat-label">Seen</span>
+                <strong id="progress-count">0/{{ animals|length }}</strong>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Region</span>
+                <strong>1</strong>
+            </div>
+        </div>
+    </section>
+
+    <nav class="dex-nav" aria-label="Primary">
+        <a class="dex-tab is-active" href="{{ url_for('index') }}">Dex</a>
+        <a class="dex-tab" href="#region-1">Region 1</a>
+        <a class="dex-tab" href="{{ url_for('scan') }}">Scan</a>
+        <a class="dex-tab" href="{{ url_for('profile') if is_authenticated else url_for('login') }}">Profile</a>
+    </nav>
+
+    <section class="camera-dock">
+        <button class="camera-launch" id="home-camera-open" type="button">
+            <span class="camera-lens" aria-hidden="true"></span>
+            <span class="camera-copy">
+                <span class="camera-label">Camera</span>
+                <span class="camera-hint">Open live scan</span>
+            </span>
+            <span class="camera-chev" aria-hidden="true">›</span>
+        </button>
+    </section>
+
+    <section class="toolbar control-panel">
+        <input id="search-input" class="search-input" type="search" placeholder="Search animals, habitats...">
+        <button id="clear-progress" class="ghost-button" type="button">Reset progress</button>
+    </section>
+
+    <section class="region-section" id="region-1">
+        <div class="region-header">
+            <div>
+                <p class="eyebrow">Region 1</p>
+                <h2>Dex</h2>
+                <p class="region-subtitle">Simple starter dex for everyday sightings</p>
+            </div>
+            <div class="region-count">{{ animals|length }} entries</div>
+        </div>
+
+        <section class="grid">
+            {% for animal in animals %}
+            <article class="animal-card" data-animal-card data-search="{{ (animal.name ~ ' ' ~ animal.category ~ ' ' ~ animal.habitat ~ ' ' ~ animal.rarity)|lower }}">
+                <div class="animal-card-top">
+                    <span class="animal-emoji">{{ animal.emoji }}</span>
+                    <span class="pill">{{ animal.category }}</span>
+                </div>
+                <div class="card-topline">
+                    <div class="entry-chip">No. {{ "%02d"|format(loop.index) }}</div>
+                    <div class="rarity-chip rarity-{{ animal.rarity|lower|replace('/', '-')|replace(' ', '-') }}">{{ animal.rarity }}</div>
+                </div>
+                <h3>{{ animal.name }}</h3>
+                <p class="scientific-name">{{ animal.scientific_name }}</p>
+                <p>{{ animal.description }}</p>
+                <p class="entry-fact">{{ animal.fact }}</p>
+                <div class="animal-meta">
+                    <span>{{ animal.habitat }}</span>
+                    <span>{{ animal.status }}</span>
+                </div>
+                <div class="animal-actions">
+                    <a class="primary-button" href="{{ url_for('animal_detail', animal_id=animal.id) }}">Open Entry</a>
+                    <button class="ghost-button discover-button" type="button" data-discover-button data-animal-id="{{ animal.id }}">
+                        Mark Found
+                    </button>
+                </div>
+            </article>
+            {% endfor %}
+        </section>
+    </section>
+
+    <section class="camera-modal is-hidden" id="home-camera-modal" aria-hidden="true">
+        <div class="camera-modal-backdrop" id="home-camera-close"></div>
+        <div class="camera-modal-shell" role="dialog" aria-modal="true" aria-labelledby="home-camera-title">
+            <div class="camera-modal-header">
+                <div>
+                    <p class="eyebrow" id="home-camera-title">Live Camera</p>
+                    <p class="region-subtitle">Use this to scan animals without leaving the home screen.</p>
+                </div>
+                <button class="camera-modal-close" id="home-camera-x" type="button">Close</button>
+            </div>
+
+            <section class="scan-stage control-panel">
+                <div class="camera-frame">
+                    <video id="camera-preview" autoplay playsinline muted></video>
+                    <div class="camera-overlay" aria-hidden="true"></div>
+                </div>
+                <canvas id="capture-canvas" class="is-hidden"></canvas>
+                <div class="scan-actions">
+                    <button id="start-camera" class="primary-button" type="button">Start Camera</button>
+                    <button id="capture-photo" class="ghost-button" type="button">Capture</button>
+                </div>
+                <div class="scan-actions">
+                    <button id="upload-scan" class="primary-button wide-button" type="button">Recognize Animal</button>
+                </div>
+                <div id="scan-status" class="scan-status">Camera is off.</div>
+                <div id="scan-result" class="scan-result is-hidden">
+                    <strong id="detected-name"></strong>
+                    <p id="detected-note"></p>
+                    <div id="detected-alt" class="detected-alt"></div>
+                </div>
+                <div id="confirm-panel" class="confirm-panel is-hidden">
+                    <div class="confirm-label">Closest Dex match</div>
+                    <strong id="confirm-name"></strong>
+                    <p id="confirm-desc"></p>
+                    <div class="confirm-actions">
+                        <button id="confirm-found" class="primary-button" type="button">Confirm Found</button>
+                        <a id="open-entry" class="ghost-button" href="/">View Entry</a>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </section>
+</section>
+{% endblock %}
