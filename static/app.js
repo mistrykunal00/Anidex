@@ -40,6 +40,33 @@ const BROAD_LABEL_MAP = {
     tiger: "Tiger",
 };
 
+const BADGE_MILESTONES = [
+    5, 10, 15, 20, 30,
+    40, 50, 60, 70, 80, 90,
+    100, 110, 120, 130, 140, 150, 151,
+];
+
+const BADGE_LABELS = {
+    5: "Starter Badge",
+    10: "Scout Badge",
+    15: "Tracker Badge",
+    20: "Explorer Badge",
+    30: "Trailblazer Badge",
+    40: "Field Badge",
+    50: "Pioneer Badge",
+    60: "Nature Badge",
+    70: "Watcher Badge",
+    80: "Keeper Badge",
+    90: "Wild Badge",
+    100: "Master Badge",
+    110: "Research Badge",
+    120: "Biome Badge",
+    130: "Survey Badge",
+    140: "Legend Badge",
+    150: "Final Stretch Badge",
+    151: "Gen One Badge",
+};
+
 const ANIMALS = Array.isArray(window.ANIDEX_ANIMALS) ? window.ANIDEX_ANIMALS : [];
 
 const state = {
@@ -52,6 +79,8 @@ const state = {
     currentCameraStream: null,
     recognizerPromise: null,
     recognizerError: null,
+    earnedBadges: [],
+    lastBadgeMessage: "",
 };
 
 function loadJson(key, fallback) {
@@ -93,10 +122,26 @@ function saveProgress(progress, user = state.currentUser) {
     saveJson(getProgressKey(user), progress);
 }
 
+function getBadgeKey(user = state.currentUser) {
+    if (user && user.email) {
+        return `${STORAGE_KEYS.progressPrefix}${normalizeEmail(user.email)}:badges`;
+    }
+    return `${STORAGE_KEYS.guestProgress}:badges`;
+}
+
+function loadBadges(user = state.currentUser) {
+    return loadJson(getBadgeKey(user), []);
+}
+
+function saveBadges(badges, user = state.currentUser) {
+    saveJson(getBadgeKey(user), badges);
+}
+
 function setCurrentUser(user) {
     state.currentUser = user ? { username: user.username, email: normalizeEmail(user.email), createdAt: user.createdAt } : null;
     saveJson(STORAGE_KEYS.currentUser, state.currentUser);
     state.discovered = loadProgress(state.currentUser);
+    state.earnedBadges = loadBadges(state.currentUser);
     syncFoundStates();
     updateProgress();
     renderProfile();
@@ -105,6 +150,7 @@ function setCurrentUser(user) {
 function hydrateCurrentUser() {
     if (!state.currentUser) {
         state.discovered = loadProgress(null);
+        state.earnedBadges = loadBadges(null);
         return;
     }
 
@@ -113,6 +159,7 @@ function hydrateCurrentUser() {
         state.currentUser = null;
         saveJson(STORAGE_KEYS.currentUser, null);
         state.discovered = loadProgress(null);
+        state.earnedBadges = loadBadges(null);
         return;
     }
 
@@ -123,6 +170,7 @@ function hydrateCurrentUser() {
     };
     saveJson(STORAGE_KEYS.currentUser, state.currentUser);
     state.discovered = loadProgress(state.currentUser);
+    state.earnedBadges = loadBadges(state.currentUser);
 }
 
 function decodedEmoji(value) {
@@ -160,11 +208,51 @@ function foundSet() {
 }
 
 function persistDiscovered(nextDiscovered) {
+    const previousCount = foundSet().size;
     state.discovered = [...new Set(nextDiscovered)];
     saveProgress(state.discovered, state.currentUser);
+    updateEarnedBadges(previousCount, foundSet().size);
+    if (state.lastBadgeMessage) {
+        const status = document.getElementById("scan-status");
+        if (status) {
+            status.textContent = state.lastBadgeMessage;
+        }
+    }
     syncFoundStates();
     updateProgress();
     renderProfile();
+}
+
+function getBadgeLabel(milestone) {
+    return BADGE_LABELS[milestone] || `${milestone} Badge`;
+}
+
+function getBadgeTitle(milestone) {
+    if (milestone === 151) {
+        return "151 discoveries reached";
+    }
+    if (milestone === 150) {
+        return "One step from the full Dex";
+    }
+    return `${milestone} discoveries reached`;
+}
+
+function updateEarnedBadges(previousCount, nextCount) {
+    const earned = new Set(state.earnedBadges || []);
+    const newlyUnlocked = [];
+
+    BADGE_MILESTONES.forEach((milestone) => {
+        if (previousCount < milestone && nextCount >= milestone && !earned.has(String(milestone))) {
+            earned.add(String(milestone));
+            newlyUnlocked.push(milestone);
+        }
+    });
+
+    if (newlyUnlocked.length) {
+        state.earnedBadges = [...earned];
+        saveBadges(state.earnedBadges, state.currentUser);
+        state.lastBadgeMessage = `Badge earned: ${getBadgeLabel(newlyUnlocked[newlyUnlocked.length - 1])}`;
+    }
 }
 
 function toggleAnimal(animalId) {
@@ -309,6 +397,19 @@ async function ensureTensorflowRecognizer() {
     if (!window.tf || !window.cocoSsd) {
         throw new Error("TensorFlow scripts are not available.");
     }
+
+    const backends = ["webgl", "wasm", "cpu"];
+    for (const backend of backends) {
+        try {
+            await window.tf.setBackend(backend);
+            await window.tf.ready();
+            return;
+        } catch (_error) {
+            // Try the next backend.
+        }
+    }
+
+    await window.tf.ready();
 }
 
 function renderProfile() {
@@ -433,6 +534,7 @@ function renderProfile() {
 
     const discoveredAnimals = state.animals.filter((animal) => state.discovered.includes(animal.id));
     const recent = discoveredAnimals.slice().reverse().slice(0, 6);
+    const earnedBadges = BADGE_MILESTONES.filter((milestone) => state.earnedBadges.includes(String(milestone)));
 
     body.innerHTML = `
         <div class="profile-hero">
@@ -462,6 +564,35 @@ function renderProfile() {
                 <strong>Active</strong>
             </div>
         </div>
+
+        <section class="profile-section">
+            <p class="eyebrow">Badges</p>
+            <div class="badge-strip">
+                ${
+                    earnedBadges.length
+                        ? earnedBadges
+                              .map((milestone) => `
+                                  <article class="badge-card">
+                                      <span class="badge-count">${milestone}</span>
+                                      <strong>${escapeHtml(getBadgeLabel(milestone))}</strong>
+                                      <p>${escapeHtml(getBadgeTitle(milestone))}</p>
+                                  </article>
+                              `)
+                              .join("")
+                        : `
+                            <article class="badge-card badge-card-empty">
+                                <strong>No badges yet</strong>
+                                <p>Find 5 animals to unlock your first badge.</p>
+                            </article>
+                          `
+                }
+            </div>
+            ${
+                state.lastBadgeMessage
+                    ? `<div class="auth-alert mt-3">${escapeHtml(state.lastBadgeMessage)}</div>`
+                    : ""
+            }
+        </section>
 
         <section class="profile-section">
             <p class="eyebrow">Recent Finds</p>
@@ -553,16 +684,32 @@ async function loadBrowserRecognizer() {
 
     if (window.cocoSsd) {
         if (!state.recognizerPromise) {
-            state.recognizerPromise = window.cocoSsd
-                .load({
-                    base: "lite_mobilenet_v2",
-                    modelUrl: new URL("/static/vendor/coco-ssd/model.json", window.location.href).toString(),
-                })
-                .catch((error) => {
-                    state.recognizerError = error && error.message ? error.message : String(error || "Model load failed.");
+            const localModelUrl = new URL("/static/vendor/coco-ssd/model.json", window.location.href).toString();
+            const remoteModelUrl = "https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd/dist/model.json";
+            const loadAttempts = [
+                () => window.cocoSsd.load({ base: "lite_mobilenet_v2", modelUrl: localModelUrl }),
+                () => window.cocoSsd.load({ base: "lite_mobilenet_v2", modelUrl: remoteModelUrl }),
+                () => window.cocoSsd.load({ base: "lite_mobilenet_v2" }),
+            ];
+
+            const attemptLoad = async (index = 0) => {
+                try {
+                    return await loadAttempts[index]();
+                } catch (error) {
+                    const message = error && error.message ? error.message : String(error || "Model load failed.");
+                    state.recognizerError = message;
+                    if (index + 1 < loadAttempts.length) {
+                        return attemptLoad(index + 1);
+                    }
                     state.recognizerPromise = null;
                     throw error;
-                });
+                }
+            };
+
+            state.recognizerPromise = attemptLoad().catch((error) => {
+                state.recognizerPromise = null;
+                throw error;
+            });
         }
         return state.recognizerPromise;
     }
