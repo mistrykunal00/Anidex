@@ -1,6 +1,6 @@
 services:
   - type: web
     name: anidex
-    runtime: static
-    staticPublishPath: .
-    buildCommand: echo "Static site ready"
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
